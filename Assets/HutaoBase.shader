@@ -253,7 +253,8 @@ Shader "Unlit/Huta"
                 float3 normalTS = float3(normalMap.ag * 2 - 1 , 0);
                 normalTS.z = sqrt(1-dot(normalTS.xy, normalTS.xy));
 
-                float3 N = normalize(mul(normalTS, float3x3(i.tangentWS, i.bitangentWS, i.normalWS)));
+                //float3 N = normalize(mul(normalTS, float3x3(i.tangentWS, i.bitangentWS, i.normalWS)));
+                float3 N = normalize(i.normalWS);
                 float3 V = normalize(mul((float3x3)UNITY_MATRIX_I_V, i.positionVS * (-1)));
                 float3 L = normalize(light.direction);
                 float3 H = normalize(L+V);
@@ -295,14 +296,11 @@ Shader "Unlit/Huta"
                 dayRampV = lerp(dayRampV, ramp0, step(ilm.a, (matEnum0 + matEnum1)/2));
 
                 float nightRampV = dayRampV + 0.5;
-                
-                
 
-
-
-
-                
-                return float4(ilm.rgb,1);
+                float lambert = max(0,NoL);          
+                float halflambert = pow(lambert * 0.5+ 0.5 , 2);
+   
+                return float4(halflambert, halflambert, halflambert,1);
 
             }
 
