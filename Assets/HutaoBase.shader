@@ -299,8 +299,40 @@ Shader "Unlit/Huta"
 
                 float lambert = max(0,NoL);          
                 float halflambert = pow(lambert * 0.5+ 0.5 , 2);
+                float lambertStep = smoothstep(0.423, 0.450, halflambert);
+                //halflambert = 0.0;
+
+                float rampClampMin =0.003;
+                float rampClampMax =0.997;
+                
+                float rampGrayU = clamp(smoothstep(0.2,0.4,halflambert),rampClampMin,rampClampMax);
+                float2  rampGrayDayUV = float2(rampGrayU, 1-dayRampV); //Unity uv origin posi is at left bottom
+                float2  rampGrayNightUV = float2(rampGrayU, 1-nightRampV);
+
+                float rampDarkU = rampClampMin;
+                float2 rampDarkDayUV = float2(rampDarkU, 1-dayRampV);
+                float2  rampDarkNightUV = float2(rampDarkU, 1-nightRampV);
+
+                float isDay = (L.y +1)/2;
+                float3 rampGrayColor = lerp(tex2D(_RampTex, rampGrayNightUV).rgb,tex2D(_RampTex, rampGrayDayUV).rgb, isDay);
+                float3 rampDarkColor = lerp(tex2D(_RampTex, rampDarkNightUV).rgb, tex2D(_RampTex, rampDarkDayUV).rgb, isDay);
+
+                float3 grayShadowColor = baseColor * rampGrayColor * _ShadowColor.rgb;
+                float3 darkShadowColor = baseColor * rampDarkColor * _ShadowColor.rgb;
+
+                float3 diffuse = 0;
+                diffuse = lerp(grayShadowColor, baseColor, lambertStep );
+                diffuse = lerp(darkShadowColor, diffuse, saturate(ilm.g * 2));
+                diffuse = lerp(diffuse, baseColor, saturate((ilm.g-0.5))* 2);
+
+                float blinnPhong = step(0, NoL )* pow(max(0,NoH), _SpecExpon);
+                float3 nonMetallicSpec = step(1.04-blinnPhong, ilm.b) * ilm.r * _KsNonMetallic;
+                float3 metallicSpec = blinnPhong * ilm.b * (lambertStep*0.8+0.2) * baseColor * _KsMetallic;
+
+
+
    
-                return float4(halflambert, halflambert, halflambert,1);
+                return float4(lambertStep*0.8+0.2,lambertStep*0.8+0.2,lambertStep*0.8+0.2,1);
 
             }
 
