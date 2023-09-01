@@ -192,7 +192,7 @@ Shader "Unlit/Huta"
             half _DoubleSided;
             half _Alpha;
 
-            sampler2D _MatalTex;
+            sampler2D _MetalTex;
 
 
             float _SpecExpon;
@@ -326,13 +326,25 @@ Shader "Unlit/Huta"
                 diffuse = lerp(diffuse, baseColor, saturate((ilm.g-0.5))* 2);
 
                 float blinnPhong = step(0, NoL )* pow(max(0,NoH), _SpecExpon);
-                float3 nonMetallicSpec = step(1.04-blinnPhong, ilm.b) * ilm.r * _KsNonMetallic;
+                float3 nonMetallicSpec = step(1.04-blinnPhong, ilm.b) * ilm.r * _KsNonMetallic; 
                 float3 metallicSpec = blinnPhong * ilm.b * (lambertStep*0.8+0.2) * baseColor * _KsMetallic;
 
+                float isMetal = step(0.95, ilm.r);
+
+                float3 specular = lerp(nonMetallicSpec, metallicSpec, isMetal);
+
+                float3 metallic = lerp(0,tex2D(_MetalTex, matcapUV).r * baseColor, isMetal);
+
+                float3 albedo = diffuse + specular + metallic;
+
+                float alpha = _Alpha * baseTex.a * toonTex.a * sphereTex.a;
+                alpha = saturate(min(max(IsFacing, _DoubleSided), alpha));
+                
+                float4 col = float4(albedo, alpha);
 
 
    
-                return float4(lambertStep*0.8+0.2,lambertStep*0.8+0.2,lambertStep*0.8+0.2,1);
+                return float4(diffuse,1);
 
             }
 

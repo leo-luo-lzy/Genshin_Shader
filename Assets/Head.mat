@@ -70,7 +70,7 @@ Material:
     - _SphereTexFac: 0
     - _ToonTexFac: 0.6
     m_Colors:
-    - _AmbientColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+    - _AmbientColor: {r: 1, g: 1, b: 1, a: 1}
     - _DiffuseColor: {r: 1, g: 1, b: 1, a: 1}
     - _OutlineMapColor0: {r: 0, g: 0, b: 0, a: 0}
     - _OutlineMapColor1: {r: 0, g: 0, b: 0, a: 0}
