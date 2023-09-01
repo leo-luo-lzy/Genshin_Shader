@@ -1,4 +1,4 @@
-Shader "Unlit/Huta"
+Shader "Unlit/Hutao"
 {
     Properties
     {
@@ -294,7 +294,7 @@ Shader "Unlit/Huta"
                 dayRampV = lerp(dayRampV, ramp2, step(ilm.a, (matEnum2 + matEnum3)/2));
                 dayRampV = lerp(dayRampV, ramp1, step(ilm.a, (matEnum1 + matEnum2)/2));
                 dayRampV = lerp(dayRampV, ramp0, step(ilm.a, (matEnum0 + matEnum1)/2));
-
+ 
                 float nightRampV = dayRampV + 0.5;
 
                 float lambert = max(0,NoL);          
@@ -341,10 +341,13 @@ Shader "Unlit/Huta"
                 alpha = saturate(min(max(IsFacing, _DoubleSided), alpha));
                 
                 float4 col = float4(albedo, alpha);
-
+                //col.a = col.a-0.5;
+                clip(col.a);
+ 
+                col.rgb =  MixFog(col.rgb, i.fogCoord);
 
    
-                return float4(diffuse,1);
+                return col;
 
             }
 
