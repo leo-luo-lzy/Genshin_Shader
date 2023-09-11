@@ -33,7 +33,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetalTex:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: f541c470d20574437ba20da498152697, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
@@ -57,15 +57,15 @@ Material:
     - _Alpha: 1
     - _BaseTexFac: 1
     - _DoubleSided: 0
-    - _KsMetallic: 1
-    - _KsNonMetallic: 1
+    - _KsMetallic: 0.82
+    - _KsNonMetallic: 0.8
     - _OutlineOffset: 0.000015
     - _RampMapRow0: 1
     - _RampMapRow1: 4
     - _RampMapRow2: 3
     - _RampMapRow3: 5
     - _RampMapRow4: 2
-    - _SpecExpon: 50
+    - _SpecExpon: 8.1
     - _SphereMulAdd: 0
     - _SphereTexFac: 0
     - _ToonTexFac: 0.6

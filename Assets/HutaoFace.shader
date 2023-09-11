@@ -17,6 +17,17 @@ Shader "Unlit/Hutao"
         _DoubleSided ("Double Sided", Range(0,1)) = 0
         _Alpha ("Alpha", Range(0,1)) = 1
 
+        _ShadowTex("Shadow Tex", 2D) = "black" {}
+
+        _ForwardVector("Forward Vector", Vector) = (0,0,1,0)
+        _RightVector("Right Vector", Vector) = (1,0,0,0)
+        _SDF("SDF", 2D) = "black" {}
+        
+        _RampRow("Ramp Row", Range(1,5)) = 5
+        _RampTex("Ramp Tex", 2D) = "wight" {}
+
+        
+
         _MainTex ("Texture", 2D) = "white" {}
 
         _MetalTex("Metal Tex", 2D) = "black" {}
@@ -236,7 +247,7 @@ Shader "Unlit/Hutao"
 
             float4 frag (v2f i, bool IsFacing : sv_IsFrontFace) : SV_Target{
                 
-                // Light light = GetMainLight(i.shadowCoord);
+                Light light = GetMainLight(i.shadowCoord);
                 // float NoL = dot(normalize(i.normalWS), normalize(light.direction));
                 // float lambert = max(0, NoL);
                 // float halfLambert = pow(lambert * 0.5 + 0.5, 2);
@@ -247,13 +258,6 @@ Shader "Unlit/Hutao"
                 // float4 col = float4(albedo, alpha);
                 // clip(col.a - 0.5);
                 // col.rgb = MixFog(col.rgb, i.fogCoord);
-
-                Light light = GetMainLight(i.shadowCoord);
-                float4 normalMap = tex2D(_NormalMap, i.uv);
-                float3 normalTS = float3(normalMap.ag * 2 - 1 , 0);
-                normalTS.z = sqrt(1-dot(normalTS.xy, normalTS.xy));
-
-                //float3 N = normalize(mul(normalTS, float3x3(i.tangentWS, i.bitangentWS, i.normalWS)));
                 float3 N = normalize(i.normalWS);
                 float3 V = normalize(mul((float3x3)UNITY_MATRIX_I_V, i.positionVS * (-1)));
                 float3 L = normalize(light.direction);
@@ -276,83 +280,17 @@ Shader "Unlit/Hutao"
                 baseColor = lerp(baseColor,baseColor*toonTex.rgb, _ToonTexFac);
                 baseColor = lerp(lerp(baseColor,baseColor*sphereTex.rgb,_SphereTexFac), lerp(baseColor, baseColor+sphereTex.rgb, _SphereTexFac), _SphereMulAdd);
 
-                float4 ilm = tex2D(_ILM, i.uv);
+                float rampV = _RampMapRow2/10 - 0.05;
+                float rampClampMin = 0.003;
+                float2 rampDayUV = float2(rampClampMin, 1-rampV);
+                float2 rampNightUV = float2(rampClampMin, 1-(rampV + 0.5));
 
-                float matEnum0 = 0.0;
-                float matEnum1 = 0.3;
-                float matEnum2 = 0.5;
-                float matEnum3 = 0.7;
-                float matEnum4 = 1.0;
-
-                float ramp0 = _RampMapRow0/10.0-0.05;
-                float ramp1 = _RampMapRow1/10.0-0.05;
-                float ramp2 = _RampMapRow2/10.0-0.05;
-                float ramp3 = _RampMapRow3/10.0-0.05;
-                float ramp4 = _RampMapRow4/10.0-0.05;
-
-                float dayRampV = lerp(ramp4, ramp3, step(ilm.a, (matEnum3 + matEnum4)/2));
-                dayRampV = lerp(dayRampV, ramp2, step(ilm.a, (matEnum2 + matEnum3)/2));
-                dayRampV = lerp(dayRampV, ramp1, step(ilm.a, (matEnum1 + matEnum2)/2));
-                dayRampV = lerp(dayRampV, ramp0, step(ilm.a, (matEnum0 + matEnum1)/2));
- 
-                float nightRampV = dayRampV + 0.5;
-
-                float lambert = max(0,NoL);          
-                float halflambert = pow(lambert * 0.5+ 0.5 , 2);
-                float lambertStep = smoothstep(0.423, 0.450, halflambert);
-                //halflambert = 0.0;
-
-                float rampClampMin =0.003;
-                float rampClampMax =0.997;
-                
-                float rampGrayU = clamp(smoothstep(0.2,0.4,halflambert),rampClampMin,rampClampMax);
-                float2  rampGrayDayUV = float2(rampGrayU, 1-dayRampV); //Unity uv origin posi is at left bottom
-                float2  rampGrayNightUV = float2(rampGrayU, 1-nightRampV);
-
-                float rampDarkU = rampClampMin;
-                float2 rampDarkDayUV = float2(rampDarkU, 1-dayRampV);
-                float2  rampDarkNightUV = float2(rampDarkU, 1-nightRampV);
-
-                float isDay = (L.y +1)/2;
-                float3 rampGrayColor = lerp(tex2D(_RampTex, rampGrayNightUV).rgb,tex2D(_RampTex, rampGrayDayUV).rgb, isDay);
-                float3 rampDarkColor = lerp(tex2D(_RampTex, rampDarkNightUV).rgb, tex2D(_RampTex, rampDarkDayUV).rgb, isDay);
-
-                float3 grayShadowColor = baseColor * rampGrayColor * _ShadowColor.rgb;
-                float3 darkShadowColor = baseColor * rampDarkColor * _ShadowColor.rgb;
-
-                float3 diffuse = 0;
-                diffuse = lerp(grayShadowColor, baseColor, lambertStep );
-                diffuse = lerp(darkShadowColor, diffuse, saturate(ilm.g * 2));
-                diffuse = lerp(diffuse, baseColor, saturate(ilm.g-0.5)* 2);
-
-                float blinnPhong = step(0, NoL )* pow(max(0,NoH), _SpecExpon);
-                float3 nonMetallicSpec = step(1.04-blinnPhong, ilm.b) * ilm.r * _KsNonMetallic; 
-                float3 metallicSpec = blinnPhong * ilm.b * (lambertStep*0.8+0.2) * baseColor * _KsMetallic;
-
-                float isMetal = step(0.95, ilm.r);
-
-                float3 specular = lerp(nonMetallicSpec, metallicSpec, isMetal);
-
-                float3 metallic = lerp(0,tex2D(_MetalTex, matcapUV).r * baseColor, isMetal);
-
-                float3 albedo = diffuse + specular + metallic;
-
-                float alpha = _Alpha * baseTex.a * toonTex.a * sphereTex.a;
-                alpha = saturate(min(max(IsFacing, _DoubleSided), alpha));
-                
-                float4 col = float4(albedo, alpha);
-                //col.a = col.a-0.5;
-                clip(col.a);
- 
-                col.rgb =  MixFog(col.rgb, i.fogCoord);
-
+                float isDay = (L.y + 1)/2;
+                float3 rampColor = lerp( tex2D(_RampTex, rampNightUV).rgb, tex2D(_RampTex, rampDayUV).rgb, isDay );
    
-                // return float4(diffuse,1);
-                return col;
+                return float4(baseColor,1);
 
             }
-
-            
 
             ENDHLSL
         }

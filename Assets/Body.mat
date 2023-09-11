@@ -130,7 +130,7 @@ Material:
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
-    - _DoubleSided: 0
+    - _DoubleSided: 1
     - _DstBlend: 0
     - _EnvironmentReflections: 1
     - _GlossMapScale: 0
@@ -157,7 +157,7 @@ Material:
     - _SphereTexFac: 0
     - _SrcBlend: 1
     - _Surface: 0
-    - _ToonTexFac: 0.6
+    - _ToonTexFac: 0.8
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
