@@ -171,6 +171,6 @@ Material:
     - _OutlineMapColor2: {r: 0, g: 0, b: 0, a: 0}
     - _OutlineMapColor3: {r: 0, g: 0, b: 0, a: 0}
     - _OutlineMapColor4: {r: 0, g: 0, b: 0, a: 0}
-    - _ShadowColor: {r: 0.9, g: 0.9, b: 0.9, a: 1}
+    - _ShadowColor: {r: 0.627451, g: 0.627451, b: 0.627451, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []

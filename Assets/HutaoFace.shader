@@ -1,4 +1,4 @@
-Shader "Unlit/Hutao"
+Shader "Unlit/HutaoFace"
 {
     Properties
     {
@@ -24,9 +24,11 @@ Shader "Unlit/Hutao"
         _SDF("SDF", 2D) = "black" {}
         
         _RampRow("Ramp Row", Range(1,5)) = 5
-        _RampTex("Ramp Tex", 2D) = "wight" {}
+        _RampTex("Ramp Tex", 2D) = "white" {}
 
-        
+        _OutlineColor ("Outline Color", Color) = (0,0,0,0)
+        _OutlineOffset ("Outline Offset", Float) = 0.000015
+
 
         _MainTex ("Texture", 2D) = "white" {}
 
@@ -39,7 +41,7 @@ Shader "Unlit/Hutao"
         _NormalMap ("Normal Map", 2D) = "bump" {}
         _ILM ("ILM", 2D)  = "black" {}
 
-        _RampTex ("Ramp Tex", 2D) = "white" {}
+        // _RampTex ("Ramp Tex", 2D) = "white" {}
 
         _RampMapRow0("Ramp Map Row 0", Range(1,5)) = 1
         _RampMapRow1("Ramp Map Row 1", Range(1,5)) = 4
@@ -215,6 +217,12 @@ Shader "Unlit/Hutao"
 
             sampler2D _RampTex;
 
+            float _RampRow;
+
+            float3 _ForwardVector;
+            float3 _RightVector;
+            sampler2D _SDF;
+
             float _RampMapRow0;
             float _RampMapRow1;
             float _RampMapRow2;
@@ -280,15 +288,43 @@ Shader "Unlit/Hutao"
                 baseColor = lerp(baseColor,baseColor*toonTex.rgb, _ToonTexFac);
                 baseColor = lerp(lerp(baseColor,baseColor*sphereTex.rgb,_SphereTexFac), lerp(baseColor, baseColor+sphereTex.rgb, _SphereTexFac), _SphereMulAdd);
 
-                float rampV = _RampMapRow2/10 - 0.05;
+                float rampV = _RampRow/10 - 0.05;
                 float rampClampMin = 0.003;
                 float2 rampDayUV = float2(rampClampMin, 1-rampV);
                 float2 rampNightUV = float2(rampClampMin, 1-(rampV + 0.5));
 
                 float isDay = (L.y + 1)/2;
                 float3 rampColor = lerp( tex2D(_RampTex, rampNightUV).rgb, tex2D(_RampTex, rampDayUV).rgb, isDay );
-   
-                return float4(baseColor,1);
+
+                float3 forwardVec = _ForwardVector;
+                float3 rightVec = _RightVector;
+
+                float3 upVector = cross(forwardVec, rightVec);
+                // float3 LpU = length(L) * (dot(L, upVector)/(length(L) * length(upVector))) * (upVector/ length(upVector))
+                float3 LpU = dot(L, upVector)/pow(length(upVector), 2) * upVector;
+                float3 LpHeadHorizon = L - LpU;
+
+
+                float pi = 3.1415926535;
+                float value = acos(dot(normalize(LpHeadHorizon), normalize(rightVec)))/pi;
+                // 0-0.5 expose right; 0.5-1 expose left
+                float exposeRight = step(value,0.5);
+                
+                // right: 1-0
+                float valueR = pow( 1 - value * 2, 3);
+                // left: 0-1
+                float valueL = pow( value * 2 - 1, 3);
+                float mixValue = lerp(valueL, valueR, exposeRight);
+
+                float sdfRembrandLeft = tex2D(_SDF, float2(1-i.uv.x, i.uv.y)).r;
+                float sdfRembrandRight = tex2D(_SDF, i.uv).r;
+                float mixSDF = lerp( sdfRembrandRight , sdfRembrandLeft, exposeRight);
+
+                float sdf = step(mixValue, mixSDF);
+                sdf = lerp(0 , sdf, step(0, dot(normalize(LpHeadHorizon), normalize(forwardVec))));
+
+
+                return float4(sdf,sdf,sdf,1);
 
             }
 

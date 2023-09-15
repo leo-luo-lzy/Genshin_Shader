@@ -57,7 +57,7 @@ Material:
     - _Alpha: 1
     - _BaseTexFac: 1
     - _DoubleSided: 0
-    - _KsMetallic: 0.82
+    - _KsMetallic: 0.91
     - _KsNonMetallic: 0.8
     - _OutlineOffset: 0.000015
     - _RampMapRow0: 1
@@ -65,7 +65,7 @@ Material:
     - _RampMapRow2: 3
     - _RampMapRow3: 5
     - _RampMapRow4: 2
-    - _SpecExpon: 8.1
+    - _SpecExpon: 64
     - _SphereMulAdd: 0
     - _SphereTexFac: 0
     - _ToonTexFac: 0.6
