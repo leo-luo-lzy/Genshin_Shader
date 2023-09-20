@@ -325,7 +325,8 @@ Shader "Unlit/Hutao"
                 diffuse = lerp(darkShadowColor, diffuse, saturate(ilm.g * 2));
                 diffuse = lerp(diffuse, baseColor, saturate(ilm.g-0.5)* 2);
 
-                float blinnPhong = step(0, NoL )* pow(max(0,NoH), _SpecExpon);
+                // float blinnPhong = step(0, NoL )* pow(max(0,NoH), _SpecExpon);
+                float blinnPhong = pow(saturate(NoH), _SpecExpon);
                 float3 nonMetallicSpec = step(1.04-blinnPhong, ilm.b) * ilm.r * _KsNonMetallic; 
                 float3 metallicSpec = blinnPhong * ilm.b * (lambertStep*0.8+0.2) * baseColor * _KsMetallic;
 
@@ -347,8 +348,8 @@ Shader "Unlit/Hutao"
                 col.rgb =  MixFog(col.rgb, i.fogCoord);
 
    
-                // return float4(diffuse,1);
-                return col;
+                return float4(nonMetallicSpec,1);
+                // return col;
 
             }
 

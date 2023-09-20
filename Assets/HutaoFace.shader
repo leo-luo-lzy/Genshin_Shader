@@ -222,6 +222,7 @@ Shader "Unlit/HutaoFace"
             float3 _ForwardVector;
             float3 _RightVector;
             sampler2D _SDF;
+            sampler2D _ShadowTex;
 
             float _RampMapRow0;
             float _RampMapRow1;
@@ -311,20 +312,52 @@ Shader "Unlit/HutaoFace"
                 float exposeRight = step(value,0.5);
                 
                 // right: 1-0
-                float valueR = pow( 1 - value * 2, 3);
+                float valueR = 1 - pow( 1 - value * 2, 5);
                 // left: 0-1
-                float valueL = pow( value * 2 - 1, 3);
+                float valueL = 1 - pow( value * 2 - 1, 5);
+
+                // float valueR = pow( 1 - value * 2, 5);
+                // float valueL = pow( value * 2 - 1, 5);
+
+                
                 float mixValue = lerp(valueL, valueR, exposeRight);
 
+                float constrainMix = lerp(-mixValue , mixValue, step(0, dot(normalize(LpHeadHorizon), normalize(forwardVec))));
+                // float temp 
+                // clamp(constrainMix,0.01,0.9);
                 float sdfRembrandLeft = tex2D(_SDF, float2(1-i.uv.x, i.uv.y)).r;
                 float sdfRembrandRight = tex2D(_SDF, i.uv).r;
                 float mixSDF = lerp( sdfRembrandRight , sdfRembrandLeft, exposeRight);
+                // float temp = min(mixValue*0.5+0.5, 1);
+                float sdf = step(clamp(-0.6*constrainMix+0.6,0.00001,1.0), mixSDF );
+                
+                // float sdf = step(mixValue, mixSDF );
 
-                float sdf = step(mixValue, mixSDF);
-                sdf = lerp(0 , sdf, step(0, dot(normalize(LpHeadHorizon), normalize(forwardVec))));
 
+                
+                // sdf = lerp(0 , sdf, step(0, dot(normalize(LpHeadHorizon), normalize(forwardVec))));
 
-                return float4(sdf,sdf,sdf,1);
+                float4 shadowTex = tex2D(_ShadowTex, i.uv);
+                sdf *= shadowTex.g;
+                sdf = lerp(sdf, 1 , shadowTex.a);
+
+                float3 shadowColor = baseColor * rampColor * _ShadowColor.rgb; 
+
+                float3 diffuse = lerp(shadowColor, baseColor, sdf);
+
+                float3 albedo = diffuse;
+
+                float alpha = _Alpha * baseTex.a * toonTex.a * sphereTex.a;
+                alpha = saturate(min(max(IsFacing, _DoubleSided), alpha));
+                
+                float4 col = float4(albedo, alpha);
+                //col.a = col.a-0.5;
+                clip(col.a);
+ 
+                col.rgb =  MixFog(col.rgb, i.fogCoord);
+
+                return col;
+                // return float4(sdf,sdf,sdf,1);
 
             }
 
