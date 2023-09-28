@@ -317,8 +317,10 @@ Shader "Unlit/Hutao"
                 float3 rampGrayColor = lerp(tex2D(_RampTex, rampGrayNightUV).rgb,tex2D(_RampTex, rampGrayDayUV).rgb, isDay);
                 float3 rampDarkColor = lerp(tex2D(_RampTex, rampDarkNightUV).rgb, tex2D(_RampTex, rampDarkDayUV).rgb, isDay);
 
-                float3 grayShadowColor = baseColor * rampGrayColor * _ShadowColor.rgb;
-                float3 darkShadowColor = baseColor * rampDarkColor * _ShadowColor.rgb;
+                // float3 grayShadowColor = baseColor * rampGrayColor * _ShadowColor.rgb;
+                float3 grayShadowColor =  rampGrayColor * lerp(_ShadowColor.rgb, 1.0, rampUV.x);
+                // float3 darkShadowColor = baseColor * rampDarkColor * _ShadowColor.rgb;
+                float3 darkShadowColor = rampDarkColor * lerp(_ShadowColor.rgb, 1.0, rampUV.x);
 
                 float3 diffuse = 0;
                 diffuse = lerp(grayShadowColor, baseColor, lambertStep );
@@ -348,8 +350,8 @@ Shader "Unlit/Hutao"
                 col.rgb =  MixFog(col.rgb, i.fogCoord);
 
    
-                return float4(nonMetallicSpec,1);
-                // return col;
+                // return float4(nonMetallicSpec,1);
+                return col;
 
             }
 

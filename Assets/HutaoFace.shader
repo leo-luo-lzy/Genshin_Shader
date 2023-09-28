@@ -340,29 +340,29 @@ Shader "Unlit/HutaoFace"
 
 
                 
-                // sdf = lerp(0 , sdf, step(0, dot(normalize(LpHeadHorizon), normalize(forwardVec))));
+                sdf = lerp(0 , sdf, step(0, dot(normalize(LpHeadHorizon), normalize(forwardVec))));
 
-                // float4 shadowTex = tex2D(_ShadowTex, i.uv);
-                // sdf *= shadowTex.g;
-                // sdf = lerp(sdf, 1 , shadowTex.a);
+                float4 shadowTex = tex2D(_ShadowTex, i.uv);
+                sdf *= shadowTex.g;
+                sdf = lerp(sdf, 1 , shadowTex.a);
 
-                // float3 shadowColor = baseColor * rampColor * _ShadowColor.rgb; 
+                float3 shadowColor = baseColor * rampColor * _ShadowColor.rgb; 
 
-                // float3 diffuse = lerp(shadowColor, baseColor, sdf);
+                float3 diffuse = lerp(shadowColor, baseColor, sdf);
 
-                // float3 albedo = diffuse;
+                float3 albedo = diffuse;
 
-                // float alpha = _Alpha * baseTex.a * toonTex.a * sphereTex.a;
-                // alpha = saturate(min(max(IsFacing, _DoubleSided), alpha));
+                float alpha = _Alpha * baseTex.a * toonTex.a * sphereTex.a;
+                alpha = saturate(min(max(IsFacing, _DoubleSided), alpha));
                 
-                // float4 col = float4(albedo, alpha);
-                // //col.a = col.a-0.5;
-                // clip(col.a);
+                float4 col = float4(albedo, alpha);
+                //col.a = col.a-0.5;
+                clip(col.a);
  
-                // col.rgb =  MixFog(col.rgb, i.fogCoord);
+                col.rgb =  MixFog(col.rgb, i.fogCoord);
 
-                // return col;
-                return float4(sdf,sdf,sdf,1);
+                return col;
+                // return float4(sdf,sdf,sdf,1);
 
             }
 
