@@ -338,11 +338,14 @@ Shader "Unlit/HutaoFace"
                 
                 // float sdf = step(mixValue, mixSDF );
 
-
+                
                 
                 sdf = lerp(0 , sdf, step(0, dot(normalize(LpHeadHorizon), normalize(forwardVec))));
 
                 float4 shadowTex = tex2D(_ShadowTex, i.uv);
+
+                half faceShadow = step(-0.5 * mixValue + 0.5 , mixSDF);
+
                 sdf *= shadowTex.g;
                 sdf = lerp(sdf, 1 , shadowTex.a);
 
@@ -361,8 +364,8 @@ Shader "Unlit/HutaoFace"
  
                 col.rgb =  MixFog(col.rgb, i.fogCoord);
 
-                return col;
-                // return float4(sdf,sdf,sdf,1);
+                // return col;
+                return float4(mixValue,mixValue,mixValue,1);
 
             }
 
