@@ -308,64 +308,43 @@ Shader "Unlit/HutaoFace"
 
                 float pi = 3.1415926535;
                 float value = acos(dot(normalize(LpHeadHorizon), normalize(rightVec)))/pi;
+                float FDotL = dot(normalize(forwardVec), normalize(LpHeadHorizon));
+                float FCrossL = cross(normalize(forwardVec), normalize(LpHeadHorizon)).y;
+                float2 shadowUV = i.uv;
+                shadowUV.x = lerp(shadowUV.x, 1.0 - shadowUV.x, step(0.0, FCrossL));
                 // 0-0.5 expose right; 0.5-1 expose left
-                float exposeRight = step(value,0.5);
+                float exposeRight = step(value,0.5);               
+                // float constrainMix = lerp(-mixValue , mixValue, step(0, dot(normalize(LpHeadHorizon), normalize(forwardVec))));
                 
-                //value: 1-0.5-0
-                // right: 1-0
-                float valueR = 1 - pow( 1 - value * 2, 1);
-                // left: 0-1
-                
-                float valueL = 1 - pow( value * 2 - 1 , 1);
 
-                // float valueR = pow( 1 - value * 2, 5);
-                // float valueL = pow( value * 2 - 1, 5);
-
-                
-                float mixValue = lerp(valueL, valueR, exposeRight);
-
-                float constrainMix = lerp(-mixValue , mixValue, step(0, dot(normalize(LpHeadHorizon), normalize(forwardVec))));
-                // float temp 
-                // clamp(constrainMix,0.01,0.9);
                 float sdfRembrandLeft = tex2D(_SDF, float2(1-i.uv.x, i.uv.y)).r;
                 float sdfRembrandRight = tex2D(_SDF, i.uv).r;
-                float mixSDF = lerp( sdfRembrandRight , sdfRembrandLeft, exposeRight);
-                // float temp = min(mixValue*0.5+0.5, 1);
-                // float sdf = step(clamp(-0.6*constrainMix+0.6,0,1.0), mixSDF);
-                // float sdf = step(0, mixSDF);
-                float sdf = step(-0.6*constrainMix+0.6, mixSDF);
-                // float sdf = -0.6*constrainMix+0.6;
+
+                float shadowTex = tex2D(_SDF, shadowUV).r;
+
+
+                float faceShadow = step(-0.5 * FDotL + 0.5 + 0.05, shadowTex);
+
+                // sdf *= shadowTex.g;
+                // sdf = lerp(sdf, 1 , shadowTex.a);
+
+                // float3 shadowColor = baseColor * rampColor * _ShadowColor.rgb; 
+
+                // float3 diffuse = lerp(shadowColor, baseColor, sdf);
+
+                // float3 albedo = diffuse;
+
+                // float alpha = _Alpha * baseTex.a * toonTex.a * sphereTex.a;
+                // alpha = saturate(min(max(IsFacing, _DoubleSided), alpha));
                 
-                // float sdf = step(mixValue, mixSDF );
-
-                
-                
-                sdf = lerp(0 , sdf, step(0, dot(normalize(LpHeadHorizon), normalize(forwardVec))));
-
-                float4 shadowTex = tex2D(_ShadowTex, i.uv);
-
-                half faceShadow = step(-0.5 * mixValue + 0.5 , mixSDF);
-
-                sdf *= shadowTex.g;
-                sdf = lerp(sdf, 1 , shadowTex.a);
-
-                float3 shadowColor = baseColor * rampColor * _ShadowColor.rgb; 
-
-                float3 diffuse = lerp(shadowColor, baseColor, sdf);
-
-                float3 albedo = diffuse;
-
-                float alpha = _Alpha * baseTex.a * toonTex.a * sphereTex.a;
-                alpha = saturate(min(max(IsFacing, _DoubleSided), alpha));
-                
-                float4 col = float4(albedo, alpha);
-                //col.a = col.a-0.5;
-                clip(col.a);
+                // float4 col = float4(albedo, alpha);
+                // //col.a = col.a-0.5;
+                // clip(col.a);
  
-                col.rgb =  MixFog(col.rgb, i.fogCoord);
+                // col.rgb =  MixFog(col.rgb, i.fogCoord);
 
                 // return col;
-                return float4(mixValue,mixValue,mixValue,1);
+                return float4(faceShadow,faceShadow,faceShadow,1);
 
             }
 
