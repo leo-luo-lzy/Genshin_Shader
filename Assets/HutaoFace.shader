@@ -18,6 +18,8 @@ Shader "Unlit/HutaoFace"
         _Alpha ("Alpha", Range(0,1)) = 1
 
         _ShadowTex("Shadow Tex", 2D) = "black" {}
+        _FaceShadowFactor ("Face Shadow Factor", Range(-1,1)) = -0.5
+        _FaceShadowOffset ("Face Shadow Offset", Range(-1,1)) = 0.55
 
         _ForwardVector("Forward Vector", Vector) = (0,0,1,0)
         _RightVector("Right Vector", Vector) = (1,0,0,0)
@@ -223,6 +225,8 @@ Shader "Unlit/HutaoFace"
             float3 _RightVector;
             sampler2D _SDF;
             sampler2D _ShadowTex;
+            float _FaceShadowFactor;
+            float _FaceShadowOffset;
 
             float _RampMapRow0;
             float _RampMapRow1;
@@ -323,7 +327,7 @@ Shader "Unlit/HutaoFace"
                 float shadowTex = tex2D(_SDF, shadowUV).r;
 
 
-                float faceShadow = step(-0.5 * FDotL + 0.5 + 0.05, shadowTex);
+                float faceShadow = step(_FaceShadowFactor * FDotL +  _FaceShadowOffset, shadowTex - _HalfFaceOffset);
 
                 // sdf *= shadowTex.g;
                 // sdf = lerp(sdf, 1 , shadowTex.a);
