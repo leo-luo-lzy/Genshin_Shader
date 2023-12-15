@@ -160,7 +160,7 @@ Material:
     - _ShadowSmoothness: 0.4
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
-    - _SpecExpon: 50
+    - _SpecExpon: 128
     - _SpecularHighlights: 1
     - _SphereMulAdd: 0
     - _SphereTexFac: 0

@@ -21,7 +21,7 @@ Shader "Unlit/Hutao"
 
         _MetalTex("Metal Tex", 2D) = "black" {}
         
-        _SpecExpon("Spec Exponent", Range(1,128)) = 50
+        _SpecExpon("Spec Exponent", Range(1,512)) = 50
         _KsNonMetallic ("Ks Non-metallic", Range(0,3)) = 1
         _KsMetallic ("Ks Metallic", Range(0,3)) = 1
 
