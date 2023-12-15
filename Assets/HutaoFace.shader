@@ -18,6 +18,7 @@ Shader "Unlit/HutaoFace"
         _Alpha ("Alpha", Range(0,1)) = 1
 
         _ShadowTex("Shadow Tex", 2D) = "black" {}
+        _HalfFaceOffset ("Half Face Offset", Range(-1,1)) = 0
         _FaceShadowFactor ("Face Shadow Factor", Range(-1,1)) = -0.5
         _FaceShadowOffset ("Face Shadow Offset", Range(-1,1)) = 0.55
 
@@ -225,6 +226,7 @@ Shader "Unlit/HutaoFace"
             float3 _RightVector;
             sampler2D _SDF;
             sampler2D _ShadowTex;
+            float _HalfFaceOffset;
             float _FaceShadowFactor;
             float _FaceShadowOffset;
 
@@ -324,31 +326,31 @@ Shader "Unlit/HutaoFace"
                 float sdfRembrandLeft = tex2D(_SDF, float2(1-i.uv.x, i.uv.y)).r;
                 float sdfRembrandRight = tex2D(_SDF, i.uv).r;
 
-                float shadowTex = tex2D(_SDF, shadowUV).r;
-
-
-                float faceShadow = step(_FaceShadowFactor * FDotL +  _FaceShadowOffset, shadowTex - _HalfFaceOffset);
-
-                // sdf *= shadowTex.g;
-                // sdf = lerp(sdf, 1 , shadowTex.a);
-
-                // float3 shadowColor = baseColor * rampColor * _ShadowColor.rgb; 
-
-                // float3 diffuse = lerp(shadowColor, baseColor, sdf);
-
-                // float3 albedo = diffuse;
-
-                // float alpha = _Alpha * baseTex.a * toonTex.a * sphereTex.a;
-                // alpha = saturate(min(max(IsFacing, _DoubleSided), alpha));
+                float sdf = tex2D(_SDF, shadowUV).r;
+                float faceShadow = step(_FaceShadowFactor * FDotL +  _FaceShadowOffset, sdf - _HalfFaceOffset);
                 
-                // float4 col = float4(albedo, alpha);
-                // //col.a = col.a-0.5;
-                // clip(col.a);
- 
-                // col.rgb =  MixFog(col.rgb, i.fogCoord);
+                float4 shadowTex = tex2D(_ShadowTex, i.uv);
+                faceShadow *= shadowTex.g;
+                
+                faceShadow = lerp(faceShadow, 1 , shadowTex.a);
 
-                // return col;
-                return float4(faceShadow,faceShadow,faceShadow,1);
+                float3 shadowColor = baseColor * rampColor * _ShadowColor.rgb; 
+
+                float3 diffuse = lerp(shadowColor, baseColor, faceShadow);
+
+                float3 albedo = diffuse;
+
+                float alpha = _Alpha * baseTex.a * toonTex.a * sphereTex.a;
+                alpha = saturate(min(max(IsFacing, _DoubleSided), alpha));
+                
+                float4 col = float4(albedo, alpha);
+                // col.a = col.a-0.5;
+                clip(col.a);
+ 
+                col.rgb =  MixFog(col.rgb, i.fogCoord);
+
+                return col;
+                // return float4(albedo,1);
 
             }
 

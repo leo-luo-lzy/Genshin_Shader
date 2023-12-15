@@ -11,9 +11,9 @@ public class FaceScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        headTransform = transform.Find("Armature/root/Hips/Spine/Chest/Upper_Chest/Neck/Head").GetComponent<Transform>();
-        headForward = transform.Find("Armature/root/Hips/Spine/Chest/Upper_Chest/Neck/Head/HeadForward").GetComponent<Transform>();
-        headRight = transform.Find("Armature/root/Hips/Spine/Chest/Upper_Chest/Neck/Head/HeadRight").GetComponent<Transform>();
+        headTransform = transform.Find("Armature/Hips/Spine/Chest/Upper_Chest/Neck/Head").GetComponent<Transform>();
+        headForward = transform.Find("Armature/Hips/Spine/Chest/Upper_Chest/Neck/Head/HeadForward").GetComponent<Transform>();
+        headRight = transform.Find("Armature/Hips/Spine/Chest/Upper_Chest/Neck/Head/HeadRight").GetComponent<Transform>();
 
         SkinnedMeshRenderer render = transform.Find("Body").GetComponent<SkinnedMeshRenderer>();
         Material[] allMaterials = render.materials;

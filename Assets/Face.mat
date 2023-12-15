@@ -9,6 +9,8 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: Face
   m_Shader: {fileID: 4800000, guid: 072ab7a53e39fa347aeca64a6d25cb0b, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -17,6 +19,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -128,9 +131,12 @@ Material:
     - _DoubleSided: 1
     - _DstBlend: 0
     - _EnvironmentReflections: 1
+    - _FaceShadowFactor: -0.5
+    - _FaceShadowOffset: 0.5
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
+    - _HalfFaceOffset: 0
     - _KsMetallic: 1
     - _KsNonMetallic: 1
     - _Metallic: 0
