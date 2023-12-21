@@ -357,6 +357,64 @@ Shader "Unlit/HutaoFace"
             ENDHLSL
         }
 
+        Pass{
+            Name "DrawOutline"
+            Tags {
+                "RenderPipeline" = "UniversalPipeline"
+                "RenderType" = "Opaque"
+            }
+            Cull Front
+            HLSLPROGRAM
+
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_fog
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            struct appdata{
+                float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
+                float3 normal : NORMAL;
+                float4 tangent : TANGENT;
+                float4 color : COLOR0;
+            };
+
+            struct v2f{
+                float2 uv: TEXCOORD0;
+                
+
+            };
+
+            CBUFFER_START(UnityPerMaterial)
+            sampler2D _BaseTex;
+            float4 _BaseTex_ST;
+
+            sampler2D _ILM;
+
+            float4 _OutlineMapColor0;
+            float4 _OutlineMapColor1;
+            float4 _OutlineMapColor2;
+            float4 _OutlineMapColor3;
+            float4 _OutlineMapColor4;
+            
+            float _OutlineOffset;
+            CBUFFER_END
+
+            v2f vert(appdata v){
+                v2f o;
+                return o;
+            }
+
+            float4 frag(v2f i, bool IsFacing : sv_IsFrontFace) : SV_Target{
+
+
+            }
+
+            ENDHLSL
+
+        }
+
 
         // Pass
         // {

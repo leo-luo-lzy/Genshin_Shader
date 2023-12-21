@@ -1,7 +1,7 @@
 Shader "Unlit/Hutao"
 {
     Properties
-    {
+    {   [Enum(UnityEngine.Rendering.CullMode)] _Cull("Cull", Float) = 2
         _AmbientColor ("Ambient Color", Color) = (0.5,0.5,0.5)
         _DiffuseColor ("Diffuse Color", Color) = (0.9,0.9,0.9)
         _ShadowColor ("Shadow Color", Color) = (0.9,0.9,0.9)
@@ -21,7 +21,7 @@ Shader "Unlit/Hutao"
 
         _MetalTex("Metal Tex", 2D) = "black" {}
         
-        _SpecExpon("Spec Exponent", Range(1,512)) = 50
+        _SpecExpon("Spec Exponent", Range(1,128)) = 50
         _KsNonMetallic ("Ks Non-metallic", Range(0,3)) = 1
         _KsMetallic ("Ks Metallic", Range(0,3)) = 1
 
@@ -243,18 +243,6 @@ Shader "Unlit/Hutao"
 
             float4 frag (v2f i, bool IsFacing : sv_IsFrontFace) : SV_Target{
                 
-                // Light light = GetMainLight(i.shadowCoord);
-                // float NoL = dot(normalize(i.normalWS), normalize(light.direction));
-                // float lambert = max(0, NoL);
-                // float halfLambert = pow(lambert * 0.5 + 0.5, 2);
-                // float4 baseTex = tex2D(_BaseTex,i.uv);
-                // float4 finalColor = float4(baseTex.r,baseTex.g,baseTex.b,1);
-                // float3 albedo = baseTex.rgb * halfLambert;
-                // float alpha = baseTex.a * _Alpha;
-                // float4 col = float4(albedo, alpha);
-                // clip(col.a - 0.5);
-                // col.rgb = MixFog(col.rgb, i.fogCoord);
-
                 Light light = GetMainLight(i.shadowCoord);
                 float4 normalMap = tex2D(_NormalMap, i.uv);
                 float3 N = i.normalWS;
@@ -263,8 +251,6 @@ Shader "Unlit/Hutao"
                     normalTS.z = sqrt(1-dot(normalTS.xy, normalTS.xy));
                     float3 N = normalize(mul(normalTS, float3x3(i.tangentWS, i.bitangentWS, i.normalWS)))
                 #endif
-  
-
 
                 // half3 N = SafeNormalize(i.normalWS);
                 
@@ -378,56 +364,68 @@ Shader "Unlit/Hutao"
 
             }
 
-            
-
             ENDHLSL
         }
 
 
-        // Pass
-        // {
-        //     CGPROGRAM
-        //     #pragma vertex vert
-        //     #pragma fragment frag
-        //     // make fog work
-        //     #pragma multi_compile_fog
+        Pass
+        {
+           Name "Outline"
+            Tags {"LightMode" = "SRPDefaultUnlit"}
 
-        //     #include "UnityCG.cginc"
+            Cull Front
 
-        //     struct appdata
-        //     {
-        //         float4 vertex : POSITION;
-        //         float2 uv : TEXCOORD0;
-        //     };
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_fog
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-        //     struct v2f
-        //     {
-        //         float2 uv : TEXCOORD0;
-        //         UNITY_FOG_COORDS(1)
-        //         float4 vertex : SV_POSITION;
-        //     };
+            struct appdata{
+                float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
+                float3 normal: NORMAL;
+                float4 tangent: TANGENT;
+                float4 color: COLOR0;
+            };
 
-        //     sampler2D _MainTex;
-        //     float4 _MainTex_ST;
+            struct v2f{
+                float2 uv: TEXCOORD0;
+                float4 positionCS: SV_POSITION;
+                float fogCoord: TEXCOORD1;  
+            };
 
-        //     v2f vert (appdata v)
-        //     {
-        //         v2f o;
-        //         o.vertex = UnityObjectToClipPos(v.vertex);
-        //         o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-        //         UNITY_TRANSFER_FOG(o,o.vertex);
-        //         return o;
-        //     }
+            CBUFFER_START(UnityPerMaterial)
 
-        //     fixed4 frag (v2f i) : SV_Target
-        //     {
-        //         // sample the texture
-        //         fixed4 col = tex2D(_MainTex, i.uv);
-        //         // apply fog
-        //         UNITY_APPLY_FOG(i.fogCoord, col);
-        //         return col;
-        //     }
-        //     ENDCG
-        // }
+            sampler2D _BaseTex;
+            float4 _BaseTex_ST;
+
+            sampler2D _ILM;
+
+            float4 _OutlineMapColor0;   
+            float4 _OutlineMapColor1; 
+            float4 _OutlineMapColor2; 
+            float4 _OutlineMapColor3; 
+            float4 _OutlineMapColor4;          
+
+            float _OutlineOffset;
+            CBUFFER_END
+
+            v2f vert(appdata v){
+                v2f o;
+                VertexPositionInputs vertexInput = GetVertexPositionInputs(v.vertex.xyz + v.normal.xyz * _OutlineOffset);
+
+                o.uv = TRANSFORM_TEX(v.uv, _BaseTex);
+                o.positionCS =vertexInput.positionCS;
+                o.fogCoord = ComputeFogFactor(vertexInput.positionCS.z);
+                return o;
+            }
+
+            float4 frag() : SV_TARGET{
+                return(1,1,1,1);
+            }
+
+            ENDHLSL
+        }
     }
 }
