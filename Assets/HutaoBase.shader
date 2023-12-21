@@ -40,13 +40,13 @@ Shader "Unlit/Hutao"
         _ShadowOffset1("Shadow Offset1",Range(0,1)) = 0.45
         _ShadowSmoothness("Shadow Smoothness0",Range(0,1)) = 0
 
-        _OutlineOffset("Outline Offset", Float) = 0.000015
+        _OutlineOffset("Outline Offset", Float) = 1
 
-        _OutlineMapColor0 ("Outline Map Color 0", Color) = (0,0,0,0)
-        _OutlineMapColor1 ("Outline Map Color 1", Color) = (0,0,0,0)
-        _OutlineMapColor2 ("Outline Map Color 2", Color) = (0,0,0,0)
-        _OutlineMapColor3 ("Outline Map Color 3", Color) = (0,0,0,0)
-        _OutlineMapColor4 ("Outline Map Color 4", Color) = (0,0,0,0)
+        _OutlineMapColor0 ("Outline Map Color 0", Color) = (0,0,0,1)
+        _OutlineMapColor1 ("Outline Map Color 1", Color) = (0,0,0,1)
+        _OutlineMapColor2 ("Outline Map Color 2", Color) = (0,0,0,1)
+        _OutlineMapColor3 ("Outline Map Color 3", Color) = (0,0,0,1)
+        _OutlineMapColor4 ("Outline Map Color 4", Color) = (0,0,0,1)
 
   
     }
@@ -413,7 +413,7 @@ Shader "Unlit/Hutao"
 
             v2f vert(appdata v){
                 v2f o;
-                VertexPositionInputs vertexInput = GetVertexPositionInputs(v.vertex.xyz + v.normal.xyz * _OutlineOffset);
+                VertexPositionInputs vertexInput = GetVertexPositionInputs(v.vertex.xyz + v.normal.xyz * _OutlineOffset* 0.001);
 
                 o.uv = TRANSFORM_TEX(v.uv, _BaseTex);
                 o.positionCS =vertexInput.positionCS;
@@ -421,8 +421,26 @@ Shader "Unlit/Hutao"
                 return o;
             }
 
-            float4 frag() : SV_TARGET{
-                return(1,1,1,1);
+            float4 frag(v2f i, bool IsFacing : SV_IsFrontFace) : SV_TARGET{
+                float4 ilm = tex2D(_ILM, i.uv);
+
+                float matEnum0 = 0.0;
+                float matEnum1 = 0.3;
+                float matEnum2 = 0.5;
+                float matEnum3 = 0.7;
+                float matEnum4 = 1.0;
+
+                float4 color = lerp(_OutlineMapColor4, _OutlineMapColor3, step(ilm.a, (matEnum4 + matEnum3)/2));
+                color = lerp(color, _OutlineMapColor2, step(ilm.a, (matEnum3 + matEnum2)/2));
+                color = lerp(color, _OutlineMapColor1, step(ilm.a, (matEnum2 + matEnum1)/2));
+                color = lerp(color, _OutlineMapColor0, step(ilm.a, (matEnum1 + matEnum0)/2));
+
+                float3 albedo = color.rgb;
+
+                float4 col = float4(albedo,1);
+
+                col.rgb = MixFog(col.rgb, i.fogCoord);
+                return col;
             }
 
             ENDHLSL

@@ -52,7 +52,7 @@ Shader "Unlit/HutaoFace"
         _RampMapRow3("Ramp Map Row 3", Range(1,5)) = 5
         _RampMapRow4("Ramp Map Row 4", Range(1,5)) = 2
 
-        _OutlineOffset("Outline Offset", Float) = 0.000015
+        _OutlineOffset("Outline Offset", Float) = 1
 
         _OutlineMapColor0 ("Outline Map Color 0", Color) = (0,0,0,0)
         _OutlineMapColor1 ("Outline Map Color 1", Color) = (0,0,0,0)
@@ -408,7 +408,7 @@ Shader "Unlit/HutaoFace"
 
             float4 frag(v2f i, bool IsFacing : sv_IsFrontFace) : SV_Target{
 
-
+                return float4(1,1,1,1);
             }
 
             ENDHLSL
