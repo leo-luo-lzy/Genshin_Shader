@@ -359,7 +359,7 @@ Shader "Unlit/Hutao"
                 
                 col.rgb = MixFog(col.rgb, i.fogCoord);
                 
-                // return float4(nonMetallicSpec, 1);
+                // return float4(col,1);
                 return col;
 
             }
@@ -402,11 +402,18 @@ Shader "Unlit/Hutao"
 
             sampler2D _ILM;
 
+            float _RampMapRow0;
+            float _RampMapRow1;
+            float _RampMapRow2;
+            float _RampMapRow3;
+            float _RampMapRow4;
+
             float4 _OutlineMapColor0;   
             float4 _OutlineMapColor1; 
             float4 _OutlineMapColor2; 
             float4 _OutlineMapColor3; 
-            float4 _OutlineMapColor4;          
+            float4 _OutlineMapColor4;      
+            sampler2D _RampTex;    
 
             float _OutlineOffset;
             CBUFFER_END
@@ -430,17 +437,23 @@ Shader "Unlit/Hutao"
                 float matEnum3 = 0.7;
                 float matEnum4 = 1.0;
 
+                float4 baseColor = tex2D(_BaseTex, i.uv);
+
+                _OutlineMapColor4 = 0.5 * baseColor;
+                _OutlineMapColor3 = 0.5 * baseColor;
+                _OutlineMapColor2 = 0.5 * baseColor;
+                _OutlineMapColor1 = 0.5 * baseColor;
+              
                 float4 color = lerp(_OutlineMapColor4, _OutlineMapColor3, step(ilm.a, (matEnum4 + matEnum3)/2));
                 color = lerp(color, _OutlineMapColor2, step(ilm.a, (matEnum3 + matEnum2)/2));
                 color = lerp(color, _OutlineMapColor1, step(ilm.a, (matEnum2 + matEnum1)/2));
                 color = lerp(color, _OutlineMapColor0, step(ilm.a, (matEnum1 + matEnum0)/2));
 
-                float3 albedo = color.rgb;
 
-                float4 col = float4(albedo,1);
-
-                col.rgb = MixFog(col.rgb, i.fogCoord);
-                return col;
+            
+                
+             
+                return (color);
             }
 
             ENDHLSL
