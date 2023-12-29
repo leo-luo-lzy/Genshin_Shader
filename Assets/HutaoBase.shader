@@ -138,7 +138,7 @@ Shader "Unlit/Hutao"
                 "LightMode" = "UniversalForward"
             }
             LOD 100
-            Cull Off
+            Cull Front
 
             HLSLPROGRAM
             #pragma multi_compile _MAIN_LIGHT_SHADOWS
@@ -373,7 +373,7 @@ Shader "Unlit/Hutao"
            Name "Outline"
             Tags {"LightMode" = "SRPDefaultUnlit"}
 
-            Cull Front
+            Cull Off
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -387,12 +387,16 @@ Shader "Unlit/Hutao"
                 float3 normal: NORMAL;
                 float4 tangent: TANGENT;
                 float4 color: COLOR0;
+                float4 vertColor : COLOR0;
+                
             };
 
             struct v2f{
                 float2 uv: TEXCOORD0;
                 float4 positionCS: SV_POSITION;
                 float fogCoord: TEXCOORD1;  
+                float4 vertColor : COLOR0;
+                float3 normalWS : TEXCOORD4;
             };
 
             CBUFFER_START(UnityPerMaterial)
@@ -420,40 +424,51 @@ Shader "Unlit/Hutao"
 
             v2f vert(appdata v){
                 v2f o;
-                VertexPositionInputs vertexInput = GetVertexPositionInputs(v.vertex.xyz + v.normal.xyz * _OutlineOffset* 0.001);
-
-                o.uv = TRANSFORM_TEX(v.uv, _BaseTex);
-                o.positionCS =vertexInput.positionCS;
-                o.fogCoord = ComputeFogFactor(vertexInput.positionCS.z);
+                // UNITY_INITIALIZE_OUTPUT(v2f, o);
+                VertexPositionInputs vertexInput = GetVertexPositionInputs(v.vertex.xyz);
+                float4 pos = vertexInput.positionCS;
+                float3 viewNormal = mul((float3x3)UNITY_MATRIX_IT_MV, v.tangent.xyz);
+                VertexNormalInputs vertexNormalInput = GetVertexNormalInputs(v.normal,v.tangent);
+                o.normalWS = vertexNormalInput.normalWS;
+                // float3 ndcNormal = normalize(TransformViewToProjection(viewNormal.xyz)) * pos.w;//将法线变换到NDC空间
+                float3 ndcNormal = normalize(mul((float3x3)UNITY_MATRIX_P, viewNormal.xyz)) * pos.w;
+                
+                float4 nearUpperRight = mul(unity_CameraInvProjection, float4(1, 1, UNITY_NEAR_CLIP_VALUE, _ProjectionParams.y));//将近裁剪面右上角的位置的顶点变换到观察空间
+                float aspect = abs(nearUpperRight.y / nearUpperRight.x);//求得屏幕宽高比
+                ndcNormal.x *= aspect;
+                pos.xy += 0.01 * _OutlineOffset * ndcNormal.xy * v.vertColor.a;//顶点色a通道控制粗细
+                o.positionCS = pos;
+                o.vertColor = v.vertColor;
                 return o;
             }
 
             float4 frag(v2f i, bool IsFacing : SV_IsFrontFace) : SV_TARGET{
-                float4 ilm = tex2D(_ILM, i.uv);
+                // float4 ilm = tex2D(_ILM, i.uv);
 
-                float matEnum0 = 0.0;
-                float matEnum1 = 0.3;
-                float matEnum2 = 0.5;
-                float matEnum3 = 0.7;
-                float matEnum4 = 1.0;
+                // float matEnum0 = 0.0;
+                // float matEnum1 = 0.3;
+                // float matEnum2 = 0.5;
+                // float matEnum3 = 0.7;
+                // float matEnum4 = 1.0;
 
-                float4 baseColor = tex2D(_BaseTex, i.uv);
+                // float4 baseColor = tex2D(_BaseTex, i.uv);
 
-                _OutlineMapColor4 = 0.5 * baseColor;
-                _OutlineMapColor3 = 0.5 * baseColor;
-                _OutlineMapColor2 = 0.5 * baseColor;
-                _OutlineMapColor1 = 0.5 * baseColor;
+                // _OutlineMapColor4 = (0.5, 0.5, 0.5, 1) * i.vertColor;
+                // _OutlineMapColor3 = (0.5, 0.5, 0.5, 1) * i.vertColor;
+                // _OutlineMapColor2 = (0.5, 0.5, 0.5, 1) * i.vertColor;
+                // _OutlineMapColor1 = (0.5, 0.5, 0.5, 1) * i.vertColor;
+                // _OutlineMapColor0 = (0.5, 0.5, 0.5, 1) * i.vertColor;
               
-                float4 color = lerp(_OutlineMapColor4, _OutlineMapColor3, step(ilm.a, (matEnum4 + matEnum3)/2));
-                color = lerp(color, _OutlineMapColor2, step(ilm.a, (matEnum3 + matEnum2)/2));
-                color = lerp(color, _OutlineMapColor1, step(ilm.a, (matEnum2 + matEnum1)/2));
-                color = lerp(color, _OutlineMapColor0, step(ilm.a, (matEnum1 + matEnum0)/2));
+                // float4 color = lerp(_OutlineMapColor4, _OutlineMapColor3, step(ilm.a, (matEnum4 + matEnum3)/2));
+                // color = lerp(color, _OutlineMapColor2, step(ilm.a, (matEnum3 + matEnum2)/2));
+                // color = lerp(color, _OutlineMapColor1, step(ilm.a, (matEnum2 + matEnum1)/2));
+                // color = lerp(color, _OutlineMapColor0, step(ilm.a, (matEnum1 + matEnum0)/2));
 
-
+                // i.vertColor = (0,0,0,0.5);
             
                 
-             
-                return (color);
+                 return float4(i.vertColor);
+                // return (i.vertColor);
             }
 
             ENDHLSL
