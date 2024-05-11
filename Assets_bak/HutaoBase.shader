@@ -138,7 +138,7 @@ Shader "Unlit/Hutao"
                 "LightMode" = "UniversalForward"
             }
             LOD 100
-            Cull Off
+            Cull Front
 
             HLSLPROGRAM
             #pragma multi_compile _MAIN_LIGHT_SHADOWS
@@ -373,7 +373,7 @@ Shader "Unlit/Hutao"
            Name "Outline"
             Tags {"LightMode" = "SRPDefaultUnlit"}
 
-            Cull Front
+            Cull Off
 
             HLSLPROGRAM
             #pragma vertex vert
@@ -385,12 +385,18 @@ Shader "Unlit/Hutao"
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
                 float3 normal: NORMAL;
-  
+                float4 tangent: TANGENT;
+                float4 color: COLOR0;
+                float4 vertColor : COLOR0;
+                
             };
 
             struct v2f{
                 float2 uv: TEXCOORD0;
                 float4 positionCS: SV_POSITION;
+                float fogCoord: TEXCOORD1;  
+                float4 vertColor : COLOR0;
+                float3 normalWS : TEXCOORD4;
             };
 
             CBUFFER_START(UnityPerMaterial)
@@ -420,12 +426,19 @@ Shader "Unlit/Hutao"
                 v2f o;
                 // UNITY_INITIALIZE_OUTPUT(v2f, o);
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(v.vertex.xyz);
-                o.positionWS = vertexInput.positionWS;
-                o.positionVS = vertexInput.positionVS;
-                o.positionCS = vertexInput.positionCS;
-
-
-
+                float4 pos = vertexInput.positionCS;
+                float3 viewNormal = mul((float3x3)UNITY_MATRIX_IT_MV, v.tangent.xyz);
+                VertexNormalInputs vertexNormalInput = GetVertexNormalInputs(v.normal,v.tangent);
+                o.normalWS = vertexNormalInput.normalWS;
+                // float3 ndcNormal = normalize(TransformViewToProjection(viewNormal.xyz)) * pos.w;//将法线变换到NDC空间
+                float3 ndcNormal = normalize(mul((float3x3)UNITY_MATRIX_P, viewNormal.xyz)) * pos.w;
+                
+                float4 nearUpperRight = mul(unity_CameraInvProjection, float4(1, 1, UNITY_NEAR_CLIP_VALUE, _ProjectionParams.y));//将近裁剪面右上角的位置的顶点变换到观察空间
+                float aspect = abs(nearUpperRight.y / nearUpperRight.x);//求得屏幕宽高比
+                ndcNormal.x *= aspect;
+                pos.xy += 0.01 * _OutlineOffset * ndcNormal.xy * v.vertColor.a;//顶点色a通道控制粗细
+                o.positionCS = pos;
+                o.vertColor = v.vertColor;
                 return o;
             }
 

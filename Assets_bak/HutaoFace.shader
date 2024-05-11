@@ -1,7 +1,7 @@
-Shader "Unlit/Hutao"
+Shader "Unlit/HutaoFace"
 {
     Properties
-    {   [Enum(UnityEngine.Rendering.CullMode)] _Cull("Cull", Float) = 2
+    {
         _AmbientColor ("Ambient Color", Color) = (0.5,0.5,0.5)
         _DiffuseColor ("Diffuse Color", Color) = (0.9,0.9,0.9)
         _ShadowColor ("Shadow Color", Color) = (0.9,0.9,0.9)
@@ -17,36 +17,48 @@ Shader "Unlit/Hutao"
         _DoubleSided ("Double Sided", Range(0,1)) = 0
         _Alpha ("Alpha", Range(0,1)) = 1
 
+        _ShadowTex("Shadow Tex", 2D) = "black" {}
+        _HalfFaceOffset ("Half Face Offset", Range(-1,1)) = 0
+        _FaceShadowFactor ("Face Shadow Factor", Range(-1,1)) = -0.5
+        _FaceShadowOffset ("Face Shadow Offset", Range(-1,1)) = 0.55
+
+        _ForwardVector("Forward Vector", Vector) = (0,0,1,0)
+        _RightVector("Right Vector", Vector) = (1,0,0,0)
+        _SDF("SDF", 2D) = "black" {}
+        
+        _RampRow("Ramp Row", Range(1,5)) = 5
+        _RampTex("Ramp Tex", 2D) = "white" {}
+
+        _OutlineColor ("Outline Color", Color) = (0,0,0,0)
+        _OutlineOffset ("Outline Offset", Float) = 0.000015
+
+
         _MainTex ("Texture", 2D) = "white" {}
 
         _MetalTex("Metal Tex", 2D) = "black" {}
         
-        _SpecExpon("Spec Exponent", Range(1,128)) = 50
+        _SpecExpon("Spec Exponent", Range(1,512)) = 50
         _KsNonMetallic ("Ks Non-metallic", Range(0,3)) = 1
         _KsMetallic ("Ks Metallic", Range(0,3)) = 1
 
         _NormalMap ("Normal Map", 2D) = "bump" {}
         _ILM ("ILM", 2D)  = "black" {}
 
-        _RampTex ("Ramp Tex", 2D) = "white" {}
+        // _RampTex ("Ramp Tex", 2D) = "white" {}
 
-        _RampMapRow0("Ramp Map Row 0", Range(1,5)) = 4      //1      //4
-        _RampMapRow1("Ramp Map Row 1", Range(1,5)) = 3      //4      //3
-        _RampMapRow2("Ramp Map Row 2", Range(1,5)) = 1      //3      //1
-        _RampMapRow3("Ramp Map Row 3", Range(1,5)) = 5      //5      //5
-        _RampMapRow4("Ramp Map Row 4", Range(1,5)) = 2      //2      //1
-
-        _ShadowOffset("Shadow Offset0",Range(0,1)) = 0.423
-        _ShadowOffset1("Shadow Offset1",Range(0,1)) = 0.45
-        _ShadowSmoothness("Shadow Smoothness0",Range(0,1)) = 0
+        _RampMapRow0("Ramp Map Row 0", Range(1,5)) = 1
+        _RampMapRow1("Ramp Map Row 1", Range(1,5)) = 4
+        _RampMapRow2("Ramp Map Row 2", Range(1,5)) = 3
+        _RampMapRow3("Ramp Map Row 3", Range(1,5)) = 5
+        _RampMapRow4("Ramp Map Row 4", Range(1,5)) = 2
 
         _OutlineOffset("Outline Offset", Float) = 1
 
-        _OutlineMapColor0 ("Outline Map Color 0", Color) = (0,0,0,1)
-        _OutlineMapColor1 ("Outline Map Color 1", Color) = (0,0,0,1)
-        _OutlineMapColor2 ("Outline Map Color 2", Color) = (0,0,0,1)
-        _OutlineMapColor3 ("Outline Map Color 3", Color) = (0,0,0,1)
-        _OutlineMapColor4 ("Outline Map Color 4", Color) = (0,0,0,1)
+        _OutlineMapColor0 ("Outline Map Color 0", Color) = (0,0,0,0)
+        _OutlineMapColor1 ("Outline Map Color 1", Color) = (0,0,0,0)
+        _OutlineMapColor2 ("Outline Map Color 2", Color) = (0,0,0,0)
+        _OutlineMapColor3 ("Outline Map Color 3", Color) = (0,0,0,0)
+        _OutlineMapColor4 ("Outline Map Color 4", Color) = (0,0,0,0)
 
   
     }
@@ -207,9 +219,16 @@ Shader "Unlit/Hutao"
             sampler2D _ILM;
 
             sampler2D _RampTex;
-            half    _ShadowOffset;
-            half    _ShadowOffset1;
-            half    _ShadowSmoothness;
+
+            float _RampRow;
+
+            float3 _ForwardVector;
+            float3 _RightVector;
+            sampler2D _SDF;
+            sampler2D _ShadowTex;
+            float _HalfFaceOffset;
+            float _FaceShadowFactor;
+            float _FaceShadowOffset;
 
             float _RampMapRow0;
             float _RampMapRow1;
@@ -244,16 +263,17 @@ Shader "Unlit/Hutao"
             float4 frag (v2f i, bool IsFacing : sv_IsFrontFace) : SV_Target{
                 
                 Light light = GetMainLight(i.shadowCoord);
-                float4 normalMap = tex2D(_NormalMap, i.uv);
-                float3 N = i.normalWS;
-                #if _NormalMap
-                    float3 normalTS = float3(normalMap.ag * 2 - 1 , 0);
-                    normalTS.z = sqrt(1-dot(normalTS.xy, normalTS.xy));
-                    float3 N = normalize(mul(normalTS, float3x3(i.tangentWS, i.bitangentWS, i.normalWS)))
-                #endif
-
-                // half3 N = SafeNormalize(i.normalWS);
-                
+                // float NoL = dot(normalize(i.normalWS), normalize(light.direction));
+                // float lambert = max(0, NoL);
+                // float halfLambert = pow(lambert * 0.5 + 0.5, 2);
+                // float4 baseTex = tex2D(_BaseTex,i.uv);
+                // float4 finalColor = float4(baseTex.r,baseTex.g,baseTex.b,1);
+                // float3 albedo = baseTex.rgb * halfLambert;
+                // float alpha = baseTex.a * _Alpha;
+                // float4 col = float4(albedo, alpha);
+                // clip(col.a - 0.5);
+                // col.rgb = MixFog(col.rgb, i.fogCoord);
+                float3 N = normalize(i.normalWS);
                 float3 V = normalize(mul((float3x3)UNITY_MATRIX_I_V, i.positionVS * (-1)));
                 float3 L = normalize(light.direction);
                 float3 H = normalize(L+V);
@@ -262,203 +282,184 @@ Shader "Unlit/Hutao"
                 float NoH = dot(N,H);
                 float NoV = dot(N,V);
 
-                
-                half3 normalVS = normalize(mul((float3x3)UNITY_MATRIX_V,N)); //归一化的观察空间法线
-                float2 matcapUV = normalVS.xy * 0.5 + 0.5;
-                // float2 matcapUV = normalVS.xy*0.5+0.5;
-                
+                float3 normalVS = normalize(mul((float3x3)UNITY_MATRIX_V, N));
+                float2 matcapUV = normalVS.xy*0.5+0.5;
 
                 float4 baseTex = tex2D(_BaseTex, i.uv);
                 float4 toonTex = tex2D(_ToonTex, matcapUV);
                 float4 sphereTex = tex2D(_SphereTex, matcapUV);
-                float3 ambientColor = _AmbientColor.rgb;
-                
-                float3 baseColor = saturate(lerp(ambientColor, ambientColor * baseTex.rgb  , _BaseTexFac));
-                // baseColor = saturate(lerp(baseColor, baseColor+ _DiffuseColor.rgb,0.6));
-                // baseColor = lerp(baseColor,baseColor*baseTex.rgb, _BaseTexFac);
+
+                float3 baseColor = _AmbientColor.rgb;
+                baseColor = saturate(lerp(baseColor, baseColor+ _DiffuseColor.rgb,0.6));
+                baseColor = lerp(baseColor,baseColor*baseTex.rgb, _BaseTexFac);
                 baseColor = lerp(baseColor,baseColor*toonTex.rgb, _ToonTexFac);
                 baseColor = lerp(lerp(baseColor,baseColor*sphereTex.rgb,_SphereTexFac), lerp(baseColor, baseColor+sphereTex.rgb, _SphereTexFac), _SphereMulAdd);
 
-                float4 ilm = tex2D(_ILM, i.uv);
+                float rampV = _RampRow/10 - 0.05;
+                float rampClampMin = 0.003;
+                float2 rampDayUV = float2(rampClampMin, 1-rampV);
+                float2 rampNightUV = float2(rampClampMin, 1-(rampV + 0.5));
 
-                float matEnum0 = 0.0;
-                float matEnum1 = 0.3;
-                float matEnum2 = 0.5;
-                float matEnum3 = 0.7;
-                float matEnum4 = 1.0;
+                float isDay = (L.y + 1)/2;
+                float3 rampColor = lerp( tex2D(_RampTex, rampNightUV).rgb, tex2D(_RampTex, rampDayUV).rgb, isDay );
 
-                float ramp0 = _RampMapRow0/10.0-0.05; //4
-                float ramp1 = _RampMapRow1/10.0-0.05; //3
-                float ramp2 = _RampMapRow2/10.0-0.05; //1
-                float ramp3 = _RampMapRow3/10.0-0.05; //5
-                float ramp4 = _RampMapRow4/10.0-0.05; //2
-                // int index = 4;
-                // index = lerp(index, 1, step(0.2, ilm.a));
-                // index = lerp(index, 2, step(0.4, ilm.a));
-                // index = lerp(index, 0, step(0.6, ilm.a));
-                // index = lerp(index, 3, step(0.8, ilm.a));
+                float3 forwardVec = _ForwardVector;
+                float3 rightVec = _RightVector;
 
-                float dayRampV = lerp(ramp4, ramp3, step(ilm.a, (matEnum3 + matEnum4)/2));
-                dayRampV = lerp(dayRampV, ramp2, step(ilm.a, (matEnum2 + matEnum3)/2));
-                dayRampV = lerp(dayRampV, ramp1, step(ilm.a, (matEnum1 + matEnum2)/2));
-                dayRampV = lerp(dayRampV, ramp0, step(ilm.a, (matEnum0 + matEnum1)/2));
-                float nightRampV = dayRampV + 0.5;
+                float3 upVector = cross(forwardVec, rightVec);
+                // float3 LpU = length(L) * (dot(L, upVector)/(length(L) * length(upVector))) * (upVector/ length(upVector))
+                float3 LpU = dot(L, upVector)/pow(length(upVector), 2) * upVector;
+                float3 LpHeadHorizon = L - LpU;
 
-                float lambert = max(0,NoL);          
-                float halflambert = pow(lambert * 0.5+ 0.5 , 2);
-                float lambertStep = smoothstep(_ShadowOffset, _ShadowOffset1, halflambert);
 
-                //halflambert = 0.0;
-
-                float rampClampMin =0.003;
-                float rampClampMax =0.997;
-                float isDay = (L.y +1)/2;
-
-                float smoothLambert = smoothstep(0, _ShadowSmoothness, halflambert);
-                float rampGrayU = clamp(smoothLambert,rampClampMin,rampClampMax);
-                float2  rampGrayDayUV = float2(rampGrayU, 1-dayRampV);
-                float2  rampGrayNightUV = float2(rampGrayU, 1-nightRampV);
-                float3 grayRamp = tex2D(_RampTex, rampGrayDayUV);
-
-                float rampDarkU = rampClampMin;
-                float2 rampDarkDayUV = float2(rampDarkU, 1- dayRampV);
-                float2 rampDarkNightUV = float2(rampDarkU, 1- nightRampV);
-
-                float3 rampGrayColor = lerp(tex2D(_RampTex, rampGrayNightUV).rgb, tex2D(_RampTex, rampGrayDayUV).rgb, isDay);
-                float3 rampDarkColor = lerp(tex2D(_RampTex, rampDarkNightUV).rgb, tex2D(_RampTex, rampDarkDayUV).rgb, isDay);
-
-                float3 grayShadowColor = baseColor * rampGrayColor * _ShadowColor.rgb;
-                float3 darkShadowColor = baseColor * rampDarkColor * _ShadowColor.rgb;
-
-                float3 diffuse = 0;
-
-                diffuse = lerp(grayShadowColor, baseColor, lambertStep );
-                diffuse = lerp(darkShadowColor, diffuse, saturate(ilm.g * 2));
-                diffuse = lerp(diffuse, baseColor, saturate(ilm.g-0.5)* 2);
-
-                float blinnPhong = step(0, NoL )* pow(max(0,NoH), _SpecExpon);
+                float pi = 3.1415926535;
+                float value = acos(dot(normalize(LpHeadHorizon), normalize(rightVec)))/pi;
+                float FDotL = dot(normalize(forwardVec), normalize(LpHeadHorizon));
+                float FCrossL = cross(normalize(forwardVec), normalize(LpHeadHorizon)).y;
+                float2 shadowUV = i.uv;
+                shadowUV.x = lerp(shadowUV.x, 1.0 - shadowUV.x, step(0.0, FCrossL));
+                // 0-0.5 expose right; 0.5-1 expose left
+                float exposeRight = step(value,0.5);               
+                // float constrainMix = lerp(-mixValue , mixValue, step(0, dot(normalize(LpHeadHorizon), normalize(forwardVec))));
                 
-                float3 nonMetallicSpec = step(1.04-blinnPhong, ilm.b) * ilm.r * _KsNonMetallic; 
-                float3 metallicSpec = blinnPhong * ilm.b * (lambertStep*0.8+0.2) * baseColor * _KsMetallic;
-            
 
-                float isMetal = step(0.95, ilm.r);
+                float sdfRembrandLeft = tex2D(_SDF, float2(1-i.uv.x, i.uv.y)).r;
+                float sdfRembrandRight = tex2D(_SDF, i.uv).r;
 
-                float3 specular = lerp(nonMetallicSpec, metallicSpec, isMetal);
+                float sdf = tex2D(_SDF, shadowUV).r;
+                float faceShadow = step(_FaceShadowFactor * FDotL +  _FaceShadowOffset, sdf - _HalfFaceOffset);
+                
+                float4 shadowTex = tex2D(_ShadowTex, i.uv);
+                faceShadow *= shadowTex.g;
+                
+                faceShadow = lerp(faceShadow, 1 , shadowTex.a);
 
-                float3 metallic = lerp(0,tex2D(_MetalTex, matcapUV).r * baseColor, isMetal);
+                float3 shadowColor = baseColor * rampColor * _ShadowColor.rgb; 
 
-                float3 albedo = diffuse + specular + metallic;
+                float3 diffuse = lerp(shadowColor, baseColor, faceShadow);
 
-                float alpha = _Alpha * baseTex.a * toonTex.a * sphereTex.a; 
+                float3 albedo = diffuse;
+
+                float alpha = _Alpha * baseTex.a * toonTex.a * sphereTex.a;
                 alpha = saturate(min(max(IsFacing, _DoubleSided), alpha));
                 
                 float4 col = float4(albedo, alpha);
+                // col.a = col.a-0.5;
+                clip(col.a);
+ 
+                col.rgb =  MixFog(col.rgb, i.fogCoord);
 
-                // clip(col.a - 0.5);
-                
-                col.rgb = MixFog(col.rgb, i.fogCoord);
-                
-                // return float4(col,1);
                 return col;
+                // return float4(albedo,1);
 
             }
 
             ENDHLSL
         }
 
-
-        Pass
-        {
-           Name "Outline"
-            Tags {"LightMode" = "SRPDefaultUnlit"}
-
+        Pass{
+            Name "DrawOutline"
+            Tags {
+                "RenderPipeline" = "UniversalPipeline"
+                "RenderType" = "Opaque"
+            }
             Cull Front
-
             HLSLPROGRAM
+
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fog
+
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             struct appdata{
                 float4 vertex : POSITION;
                 float2 uv : TEXCOORD0;
-                float3 normal: NORMAL;
-  
+                float3 normal : NORMAL;
+                float4 tangent : TANGENT;
+                float4 color : COLOR0;
             };
 
             struct v2f{
                 float2 uv: TEXCOORD0;
-                float4 positionCS: SV_POSITION;
+                
+
             };
 
             CBUFFER_START(UnityPerMaterial)
-
             sampler2D _BaseTex;
             float4 _BaseTex_ST;
 
             sampler2D _ILM;
 
-            float _RampMapRow0;
-            float _RampMapRow1;
-            float _RampMapRow2;
-            float _RampMapRow3;
-            float _RampMapRow4;
-
-            float4 _OutlineMapColor0;   
-            float4 _OutlineMapColor1; 
-            float4 _OutlineMapColor2; 
-            float4 _OutlineMapColor3; 
-            float4 _OutlineMapColor4;      
-            sampler2D _RampTex;    
-
+            float4 _OutlineMapColor0;
+            float4 _OutlineMapColor1;
+            float4 _OutlineMapColor2;
+            float4 _OutlineMapColor3;
+            float4 _OutlineMapColor4;
+            
             float _OutlineOffset;
             CBUFFER_END
 
             v2f vert(appdata v){
                 v2f o;
-                // UNITY_INITIALIZE_OUTPUT(v2f, o);
-                VertexPositionInputs vertexInput = GetVertexPositionInputs(v.vertex.xyz);
-                o.positionWS = vertexInput.positionWS;
-                o.positionVS = vertexInput.positionVS;
-                o.positionCS = vertexInput.positionCS;
-
-
-
                 return o;
             }
 
-            float4 frag(v2f i, bool IsFacing : SV_IsFrontFace) : SV_TARGET{
-                // float4 ilm = tex2D(_ILM, i.uv);
+            float4 frag(v2f i, bool IsFacing : sv_IsFrontFace) : SV_Target{
 
-                // float matEnum0 = 0.0;
-                // float matEnum1 = 0.3;
-                // float matEnum2 = 0.5;
-                // float matEnum3 = 0.7;
-                // float matEnum4 = 1.0;
-
-                // float4 baseColor = tex2D(_BaseTex, i.uv);
-
-                // _OutlineMapColor4 = (0.5, 0.5, 0.5, 1) * i.vertColor;
-                // _OutlineMapColor3 = (0.5, 0.5, 0.5, 1) * i.vertColor;
-                // _OutlineMapColor2 = (0.5, 0.5, 0.5, 1) * i.vertColor;
-                // _OutlineMapColor1 = (0.5, 0.5, 0.5, 1) * i.vertColor;
-                // _OutlineMapColor0 = (0.5, 0.5, 0.5, 1) * i.vertColor;
-              
-                // float4 color = lerp(_OutlineMapColor4, _OutlineMapColor3, step(ilm.a, (matEnum4 + matEnum3)/2));
-                // color = lerp(color, _OutlineMapColor2, step(ilm.a, (matEnum3 + matEnum2)/2));
-                // color = lerp(color, _OutlineMapColor1, step(ilm.a, (matEnum2 + matEnum1)/2));
-                // color = lerp(color, _OutlineMapColor0, step(ilm.a, (matEnum1 + matEnum0)/2));
-
-                // i.vertColor = (0,0,0,0.5);
-            
-                
-                 return float4(i.vertColor);
-                // return (i.vertColor);
+                return float4(1,1,1,1);
             }
 
             ENDHLSL
+
         }
+
+
+        // Pass
+        // {
+        //     CGPROGRAM
+        //     #pragma vertex vert
+        //     #pragma fragment frag
+        //     // make fog work
+        //     #pragma multi_compile_fog
+
+        //     #include "UnityCG.cginc"
+
+        //     struct appdata
+        //     {
+        //         float4 vertex : POSITION;
+        //         float2 uv : TEXCOORD0;
+        //     };
+
+        //     struct v2f
+        //     {
+        //         float2 uv : TEXCOORD0;
+        //         UNITY_FOG_COORDS(1)
+        //         float4 vertex : SV_POSITION;
+        //     };
+
+        //     sampler2D _MainTex;
+        //     float4 _MainTex_ST;
+
+        //     v2f vert (appdata v)
+        //     {
+        //         v2f o;
+        //         o.vertex = UnityObjectToClipPos(v.vertex);
+        //         o.uv = TRANSFORM_TEX(v.uv, _MainTex);
+        //         UNITY_TRANSFER_FOG(o,o.vertex);
+        //         return o;
+        //     }
+
+        //     fixed4 frag (v2f i) : SV_Target
+        //     {
+        //         // sample the texture
+        //         fixed4 col = tex2D(_MainTex, i.uv);
+        //         // apply fog
+        //         UNITY_APPLY_FOG(i.fogCoord, col);
+        //         return col;
+        //     }
+        //     ENDCG
+        // }
     }
 }
