@@ -280,18 +280,26 @@ Shader "Unlit/Hutao"
                 baseColor = lerp(lerp(baseColor,baseColor*sphereTex.rgb,_SphereTexFac), lerp(baseColor, baseColor+sphereTex.rgb, _SphereTexFac), _SphereMulAdd);
 
                 float4 ilm = tex2D(_ILM, i.uv);
+                                                            // 灰度1.0 ：皮肤质感/头发质感（头发的部分是没有皮肤的）
 
+                                                            // 灰度0.7：丝绸/丝袜
+
+                                                            // 灰度0.5 ：金属/金属投影
+
+                                                            // 灰度0.3 ：软的物体
+
+                                                            // 灰度0.0 ：硬的物体
                 float matEnum0 = 0.0;
                 float matEnum1 = 0.3;
                 float matEnum2 = 0.5;
                 float matEnum3 = 0.7;
                 float matEnum4 = 1.0;
 
-                float ramp0 = _RampMapRow0/10.0-0.05; //4
-                float ramp1 = _RampMapRow1/10.0-0.05; //3
-                float ramp2 = _RampMapRow2/10.0-0.05; //1
-                float ramp3 = _RampMapRow3/10.0-0.05; //5
-                float ramp4 = _RampMapRow4/10.0-0.05; //2
+                float ramp0 = _RampMapRow0/10.0-0.05; //4   0.35
+                float ramp1 = _RampMapRow1/10.0-0.05; //3   0.25
+                float ramp2 = _RampMapRow2/10.0-0.05; //1   0.05
+                float ramp3 = _RampMapRow3/10.0-0.05; //5   0.45
+                float ramp4 = _RampMapRow4/10.0-0.05; //2   0.15
                 // int index = 4;
                 // index = lerp(index, 1, step(0.2, ilm.a));
                 // index = lerp(index, 2, step(0.4, ilm.a));
@@ -368,97 +376,97 @@ Shader "Unlit/Hutao"
         }
 
 
-        Pass
-        {
-           Name "Outline"
-            Tags {"LightMode" = "SRPDefaultUnlit"}
+        // Pass
+        // {
+        //    Name "Outline"
+        //     Tags {"LightMode" = "SRPDefaultUnlit"}
 
-            Cull Front
+        //     Cull Front
 
-            HLSLPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma multi_compile_fog
-            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+        //     HLSLPROGRAM
+        //     #pragma vertex vert
+        //     #pragma fragment frag
+        //     #pragma multi_compile_fog
+        //     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-            struct appdata{
-                float4 vertex : POSITION;
-                float2 uv : TEXCOORD0;
-                float3 normal: NORMAL;
+        //     struct appdata{
+        //         float4 vertex : POSITION;
+        //         float2 uv : TEXCOORD0;
+        //         float3 normal: NORMAL;
   
-            };
+        //     };
 
-            struct v2f{
-                float2 uv: TEXCOORD0;
-                float4 positionCS: SV_POSITION;
-            };
+        //     struct v2f{
+        //         float2 uv: TEXCOORD0;
+        //         float4 positionCS: SV_POSITION;
+        //     };
 
-            CBUFFER_START(UnityPerMaterial)
+        //     CBUFFER_START(UnityPerMaterial)
 
-            sampler2D _BaseTex;
-            float4 _BaseTex_ST;
+        //     sampler2D _BaseTex;
+        //     float4 _BaseTex_ST;
 
-            sampler2D _ILM;
+        //     sampler2D _ILM;
 
-            float _RampMapRow0;
-            float _RampMapRow1;
-            float _RampMapRow2;
-            float _RampMapRow3;
-            float _RampMapRow4;
+        //     float _RampMapRow0;
+        //     float _RampMapRow1;
+        //     float _RampMapRow2;
+        //     float _RampMapRow3;
+        //     float _RampMapRow4;
 
-            float4 _OutlineMapColor0;   
-            float4 _OutlineMapColor1; 
-            float4 _OutlineMapColor2; 
-            float4 _OutlineMapColor3; 
-            float4 _OutlineMapColor4;      
-            sampler2D _RampTex;    
+        //     float4 _OutlineMapColor0;   
+        //     float4 _OutlineMapColor1; 
+        //     float4 _OutlineMapColor2; 
+        //     float4 _OutlineMapColor3; 
+        //     float4 _OutlineMapColor4;      
+        //     sampler2D _RampTex;    
 
-            float _OutlineOffset;
-            CBUFFER_END
+        //     float _OutlineOffset;
+        //     CBUFFER_END
 
-            v2f vert(appdata v){
-                v2f o;
-                // UNITY_INITIALIZE_OUTPUT(v2f, o);
-                VertexPositionInputs vertexInput = GetVertexPositionInputs(v.vertex.xyz);
-                o.positionWS = vertexInput.positionWS;
-                o.positionVS = vertexInput.positionVS;
-                o.positionCS = vertexInput.positionCS;
+        //     v2f vert(appdata v){
+        //         v2f o;
+        //         // UNITY_INITIALIZE_OUTPUT(v2f, o);
+        //         VertexPositionInputs vertexInput = GetVertexPositionInputs(v.vertex.xyz);
+        //         o.positionWS = vertexInput.positionWS;
+        //         o.positionVS = vertexInput.positionVS;
+        //         o.positionCS = vertexInput.positionCS;
 
 
 
-                return o;
-            }
+        //         return o;
+        //     }
 
-            float4 frag(v2f i, bool IsFacing : SV_IsFrontFace) : SV_TARGET{
-                // float4 ilm = tex2D(_ILM, i.uv);
+        //     float4 frag(v2f i, bool IsFacing : SV_IsFrontFace) : SV_TARGET{
+        //         // float4 ilm = tex2D(_ILM, i.uv);
 
-                // float matEnum0 = 0.0;
-                // float matEnum1 = 0.3;
-                // float matEnum2 = 0.5;
-                // float matEnum3 = 0.7;
-                // float matEnum4 = 1.0;
+        //         // float matEnum0 = 0.0;
+        //         // float matEnum1 = 0.3;
+        //         // float matEnum2 = 0.5;
+        //         // float matEnum3 = 0.7;
+        //         // float matEnum4 = 1.0;
 
-                // float4 baseColor = tex2D(_BaseTex, i.uv);
+        //         // float4 baseColor = tex2D(_BaseTex, i.uv);
 
-                // _OutlineMapColor4 = (0.5, 0.5, 0.5, 1) * i.vertColor;
-                // _OutlineMapColor3 = (0.5, 0.5, 0.5, 1) * i.vertColor;
-                // _OutlineMapColor2 = (0.5, 0.5, 0.5, 1) * i.vertColor;
-                // _OutlineMapColor1 = (0.5, 0.5, 0.5, 1) * i.vertColor;
-                // _OutlineMapColor0 = (0.5, 0.5, 0.5, 1) * i.vertColor;
+        //         // _OutlineMapColor4 = (0.5, 0.5, 0.5, 1) * i.vertColor;
+        //         // _OutlineMapColor3 = (0.5, 0.5, 0.5, 1) * i.vertColor;
+        //         // _OutlineMapColor2 = (0.5, 0.5, 0.5, 1) * i.vertColor;
+        //         // _OutlineMapColor1 = (0.5, 0.5, 0.5, 1) * i.vertColor;
+        //         // _OutlineMapColor0 = (0.5, 0.5, 0.5, 1) * i.vertColor;
               
-                // float4 color = lerp(_OutlineMapColor4, _OutlineMapColor3, step(ilm.a, (matEnum4 + matEnum3)/2));
-                // color = lerp(color, _OutlineMapColor2, step(ilm.a, (matEnum3 + matEnum2)/2));
-                // color = lerp(color, _OutlineMapColor1, step(ilm.a, (matEnum2 + matEnum1)/2));
-                // color = lerp(color, _OutlineMapColor0, step(ilm.a, (matEnum1 + matEnum0)/2));
+        //         // float4 color = lerp(_OutlineMapColor4, _OutlineMapColor3, step(ilm.a, (matEnum4 + matEnum3)/2));
+        //         // color = lerp(color, _OutlineMapColor2, step(ilm.a, (matEnum3 + matEnum2)/2));
+        //         // color = lerp(color, _OutlineMapColor1, step(ilm.a, (matEnum2 + matEnum1)/2));
+        //         // color = lerp(color, _OutlineMapColor0, step(ilm.a, (matEnum1 + matEnum0)/2));
 
-                // i.vertColor = (0,0,0,0.5);
+        //         // i.vertColor = (0,0,0,0.5);
             
                 
-                 return float4(i.vertColor);
-                // return (i.vertColor);
-            }
+        //          return float4(i.vertColor);
+        //         // return (i.vertColor);
+        //     }
 
-            ENDHLSL
-        }
+        //     ENDHLSL
+        // }
     }
 }
