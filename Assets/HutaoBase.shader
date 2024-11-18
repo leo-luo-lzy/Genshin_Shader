@@ -376,66 +376,71 @@ Shader "Unlit/Hutao"
         }
 
 
-        // Pass
-        // {
-        //    Name "Outline"
-        //     Tags {"LightMode" = "SRPDefaultUnlit"}
+        Pass
+        {
+           Name "DrawOutline"
+            Tags {                
+                "RenderPipeline" = "UniversalPipeline"
+                "RenderType" = "Opaque"
+            }
 
-        //     Cull Front
+            Cull Front
 
-        //     HLSLPROGRAM
-        //     #pragma vertex vert
-        //     #pragma fragment frag
-        //     #pragma multi_compile_fog
-        //     #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            HLSLPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #pragma multi_compile_fog
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-        //     struct appdata{
-        //         float4 vertex : POSITION;
-        //         float2 uv : TEXCOORD0;
-        //         float3 normal: NORMAL;
+            struct appdata{
+                float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
+                float3 normal: NORMAL;
+                float4 tangent : TANGENT;
+                float4 color : COLOR0;
   
-        //     };
+            };
 
-        //     struct v2f{
-        //         float2 uv: TEXCOORD0;
-        //         float4 positionCS: SV_POSITION;
-        //     };
+            struct v2f{
+                float2 uv: TEXCOORD0;
+                float4 positionCS: SV_POSITION;
+                float fogCoord : TEXCOORD1;
+            };
 
-        //     CBUFFER_START(UnityPerMaterial)
+            CBUFFER_START(UnityPerMaterial)
 
-        //     sampler2D _BaseTex;
-        //     float4 _BaseTex_ST;
+            sampler2D _BaseTex;
+            float4 _BaseTex_ST;
 
-        //     sampler2D _ILM;
+            sampler2D _ILM;
 
-        //     float _RampMapRow0;
-        //     float _RampMapRow1;
-        //     float _RampMapRow2;
-        //     float _RampMapRow3;
-        //     float _RampMapRow4;
+            float _RampMapRow0;
+            float _RampMapRow1;
+            float _RampMapRow2;
+            float _RampMapRow3;
+            float _RampMapRow4;
 
-        //     float4 _OutlineMapColor0;   
-        //     float4 _OutlineMapColor1; 
-        //     float4 _OutlineMapColor2; 
-        //     float4 _OutlineMapColor3; 
-        //     float4 _OutlineMapColor4;      
-        //     sampler2D _RampTex;    
+            float4 _OutlineMapColor0;   
+            float4 _OutlineMapColor1; 
+            float4 _OutlineMapColor2; 
+            float4 _OutlineMapColor3; 
+            float4 _OutlineMapColor4;      
+            sampler2D _RampTex;    
 
-        //     float _OutlineOffset;
-        //     CBUFFER_END
+            float _OutlineOffset;
+            CBUFFER_END
 
-        //     v2f vert(appdata v){
-        //         v2f o;
-        //         // UNITY_INITIALIZE_OUTPUT(v2f, o);
-        //         VertexPositionInputs vertexInput = GetVertexPositionInputs(v.vertex.xyz);
-        //         o.positionWS = vertexInput.positionWS;
-        //         o.positionVS = vertexInput.positionVS;
-        //         o.positionCS = vertexInput.positionCS;
-
-
-
-        //         return o;
-        //     }
+            v2f vert(appdata v){
+                v2f o;
+                // UNITY_INITIALIZE_OUTPUT(v2f, o);
+                VertexPositionInputs vertexInput = GetVertexPositionInputs(v.vertex.xyz + v.normal.xyz * _OutlineOffset);
+                o.uv = TRANSFORM_TEX(v.uv, _BaseTex)
+                o.positionWS = vertexInput.positionWS;
+                o.positionVS = vertexInput.positionVS;
+                o.positionCS = vertexInput.positionCS;
+                o.fogCoord = ComputeFogFactor(vertexInput.positionCS.z)
+                return o;
+            }
 
         //     float4 frag(v2f i, bool IsFacing : SV_IsFrontFace) : SV_TARGET{
         //         // float4 ilm = tex2D(_ILM, i.uv);
@@ -467,6 +472,6 @@ Shader "Unlit/Hutao"
         //     }
 
         //     ENDHLSL
-        // }
+        }
     }
 }
