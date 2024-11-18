@@ -367,7 +367,7 @@ Shader "Unlit/Hutao"
                 
                 col.rgb = MixFog(col.rgb, i.fogCoord);
                 
-                // return float4(col,1);
+                // return float4(tex2D(_RampTex, rampDarkNightUV).rgb,1);
                 return col;
 
             }
@@ -434,44 +434,52 @@ Shader "Unlit/Hutao"
                 v2f o;
                 // UNITY_INITIALIZE_OUTPUT(v2f, o);
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(v.vertex.xyz + v.normal.xyz * _OutlineOffset);
-                o.uv = TRANSFORM_TEX(v.uv, _BaseTex)
-                o.positionWS = vertexInput.positionWS;
-                o.positionVS = vertexInput.positionVS;
+                o.uv = TRANSFORM_TEX(v.uv, _BaseTex);
+                // o.positionWS = vertexInput.positionWS;
+                // o.positionVS = vertexInput.positionVS;
                 o.positionCS = vertexInput.positionCS;
-                o.fogCoord = ComputeFogFactor(vertexInput.positionCS.z)
+                o.fogCoord = ComputeFogFactor(vertexInput.positionCS.z);
                 return o;
             }
 
-        //     float4 frag(v2f i, bool IsFacing : SV_IsFrontFace) : SV_TARGET{
-        //         // float4 ilm = tex2D(_ILM, i.uv);
+            float4 frag(v2f i, bool IsFacing : SV_IsFrontFace) : SV_TARGET{
+                float4 ilm = tex2D(_ILM, i.uv);
 
-        //         // float matEnum0 = 0.0;
-        //         // float matEnum1 = 0.3;
-        //         // float matEnum2 = 0.5;
-        //         // float matEnum3 = 0.7;
-        //         // float matEnum4 = 1.0;
+                float matEnum0 = 0.0;
+                float matEnum1 = 0.3;
+                float matEnum2 = 0.5;
+                float matEnum3 = 0.7;
+                float matEnum4 = 1.0;
 
-        //         // float4 baseColor = tex2D(_BaseTex, i.uv);
+                // float3 rampGrayColor = lerp(tex2D(_RampTex, rampGrayNightUV).rgb, tex2D(_RampTex, rampGrayDayUV).rgb, isDay);
+                float rampDarkU = 0.003;
+                float3 rampGrayColor =  tex2D(_RampTex, float2(0.003,0.15)).rgb;
+                _OutlineMapColor4 = (rampGrayColor,1) *_OutlineMapColor4;
 
-        //         // _OutlineMapColor4 = (0.5, 0.5, 0.5, 1) * i.vertColor;
-        //         // _OutlineMapColor3 = (0.5, 0.5, 0.5, 1) * i.vertColor;
-        //         // _OutlineMapColor2 = (0.5, 0.5, 0.5, 1) * i.vertColor;
-        //         // _OutlineMapColor1 = (0.5, 0.5, 0.5, 1) * i.vertColor;
-        //         // _OutlineMapColor0 = (0.5, 0.5, 0.5, 1) * i.vertColor;
+                //                 float ramp0 = _RampMapRow0/10.0-0.05; //4   0.35
+                // float ramp1 = _RampMapRow1/10.0-0.05; //3   0.25
+                // float ramp2 = _RampMapRow2/10.0-0.05; //1   0.05
+                // float ramp3 = _RampMapRow3/10.0-0.05; //5   0.45
+                // float ramp4 = _RampMapRow4/10.0-0.05; //2   0.15
               
-        //         // float4 color = lerp(_OutlineMapColor4, _OutlineMapColor3, step(ilm.a, (matEnum4 + matEnum3)/2));
-        //         // color = lerp(color, _OutlineMapColor2, step(ilm.a, (matEnum3 + matEnum2)/2));
-        //         // color = lerp(color, _OutlineMapColor1, step(ilm.a, (matEnum2 + matEnum1)/2));
-        //         // color = lerp(color, _OutlineMapColor0, step(ilm.a, (matEnum1 + matEnum0)/2));
+                float4 color = lerp(_OutlineMapColor4, _OutlineMapColor3, step(ilm.a, (matEnum4 + matEnum3)/2));
+                color = lerp(color, _OutlineMapColor2, step(ilm.a, (matEnum3 + matEnum2)/2));
+                color = lerp(color, _OutlineMapColor1, step(ilm.a, (matEnum2 + matEnum1)/2));
+                color = lerp(color, _OutlineMapColor0, step(ilm.a, (matEnum1 + matEnum0)/2));
 
-        //         // i.vertColor = (0,0,0,0.5);
+                float3 albedo = color.rgb;
+                float4 col = float4(albedo,1);
+                col.rgb = float3(rampGrayColor.rgb);
+                col.rgb = MixFog(col.rgb, i.fogCoord);
+                
+                return col;
             
                 
         //          return float4(i.vertColor);
         //         // return (i.vertColor);
-        //     }
+            }
 
-        //     ENDHLSL
+            ENDHLSL
         }
     }
 }
